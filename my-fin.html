@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculadora de Despesas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="assests/css/style.css">
+</head>
+
+<body>
+    <main>
+        <section class="card" aria-labelledby="calc-title">
+            <h1 id="calc-title" class="visually-hidden">Formulário de Despesas Mensais</h2>
+                <div class="form-group">
+                    <label for="salario">Salário Base (Kz)</label>
+                    <input type="number" id="salario" value="580000" min="0">
+                    <div id="error-salario" class="error">Por favor, insira um salário válido.</div>
+                </div>
+                <div class="form-group">
+                    <label for="descricao">Descrição da Despesa</label>
+                    <input type="text" id="descricao" placeholder="Ex: Dízimo">
+                    <div id="error-descricao" class="error">A descrição não pode estar vazia.</div>
+                </div>
+                <div class="form-group">
+                    <label for="valor">Valor da Despesa (Kz)</label>
+                    <input type="number" id="valor" placeholder="Ex: 10000" min="0">
+                    <div id="error-valor" class="error">Por favor, insira um valor válido.</div>
+                </div>
+                <button id="btn-adicionar">Adicionar Despesa</button>
+                <table aria-label="Lista de Despesas">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Descrição</th>
+                            <th class="num">Valor (Kz)</th>
+                            <th class="action">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela"></tbody>
+                    <tfoot id="resumo"></tfoot>
+                </table>
+        </section>
+    </main>
+
+    <script src="assests/js/script.js"></script>
+
+</body>
+
+</html>
