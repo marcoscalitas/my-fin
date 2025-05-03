@@ -70,8 +70,8 @@ function render() {
     
         tr.classList.add('highlight');
         tr.innerHTML = `
+        <td colspan="1">*</td>
             <td>${label}</td>
-            <td colspan="1">-</td>
             <td class="num ${className}">${formatCurrency(val)}</td>
             <td class="action">
                 ${label === 'Reserva' ? btnReservaActions : ''}

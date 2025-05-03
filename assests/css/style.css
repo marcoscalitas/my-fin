@@ -94,17 +94,28 @@ button:hover {
     filter: brightness(0.9);
 }
 
+/* ENVOLTO DA TABELA */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* MELHORIA NA TABELA */
 table {
     width: 100%;
+    min-width: 600px;
     border-collapse: collapse;
-    margin-top: 2rem;
+    font-size: 0.95rem;
 }
 
 th,
 td {
-    padding: .75rem;
+    padding: .75rem 1rem;
     border: 1px solid var(--border);
-    font-size: .95rem;
+    white-space: nowrap;
 }
 
 th {
@@ -169,6 +180,13 @@ tr:nth-child(even) td {
     color: #ae0000;
     font-weight: bold;
 }
+
+#tabela, #tabela th, #tabela td,
+#resumo, #resumo th, #resumo td, .txt-center {
+    text-align: center;
+    vertical-align: middle;
+}
+
 
 @media (max-width: 600px) {
     .card {
