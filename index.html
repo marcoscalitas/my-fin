@@ -12,39 +12,36 @@
 
 <body>
     <main>
+        <h1 id="calc-title" class="visually-hidden txt-center">
+            Formulário de Despesas Mensais
+        </h1>
         <section class="card" aria-labelledby="calc-title">
-            <h1 id="calc-title" class="visually-hidden">Formulário de Despesas Mensais</h1>
-
             <div class="form-group">
                 <label for="salario">Salário Base (Kz)</label>
-                <input type="number" id="salario" min="0">
-                <div id="error-salario" class="error">Por favor, insira um salário válido.</div>
+                <input type="number" id="salario" min="0" />
             </div>
 
             <div class="form-group">
                 <label for="descricao">Descrição da Despesa</label>
-                <input type="text" id="descricao" placeholder="Ex: Dízimo">
-                <div id="error-descricao" class="error">A descrição não pode estar vazia.</div>
+                <input type="text" id="descricao" placeholder="Ex: Dízimo" />
             </div>
 
             <div class="form-group">
                 <label for="valor">Valor da Despesa (Kz)</label>
-                <input type="number" id="valor" placeholder="Ex: 10000" min="0">
-                <div id="error-valor" class="error">Por favor, insira um valor válido.</div>
+                <input type="number" id="valor" placeholder="Ex: 10000" min="0" />
             </div>
 
             <button id="btn-adicionar">Adicionar Despesa</button>
 
-            <!-- Tabela envolvida para responsividade -->
             <div class="table-wrapper">
                 <table aria-label="Lista de Despesas">
                     <thead>
                         <tr>
                             <th class="txt-center">#</th>
                             <th class="txt-center">Descrição</th>
-                            <th class="txt-center" class="num">Valor (Kz)</th>
+                            <th class="txt-center num">Valor (Kz)</th>
                             <th>Percentagem</th>
-                            <th class="txt-center" class="action">Ações</th>
+                            <th class="txt-center action">Ações</th>
                         </tr>
                     </thead>
                     <tbody id="tabela"></tbody>

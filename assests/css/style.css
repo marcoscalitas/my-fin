@@ -68,10 +68,11 @@ input[type="text"] {
     font-size: 1rem;
 }
 
-.error {
-    color: var(--error);
-    font-size: .875rem;
-    display: none;
+.error-msg {
+    color: red;
+    font-size: 0.9em;
+    margin-top: 4px;
+    
 }
 
 button {
