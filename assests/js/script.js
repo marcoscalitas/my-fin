@@ -4,8 +4,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const getStorage = key => JSON.parse(localStorage.getItem(key));
     const setStorage = (key, value) => localStorage.setItem(key, JSON.stringify(value));
     const formatCurrency = value => value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-    const percentOf = (value, total) => total > 0 ? (value / total * 100).toFixed(2) + '%' : '-';
-
+    
+    const percentOf = (value, total) => {
+        if (total <= 0) return '-';
+        const percent = (value / total * 100);
+        return percent % 1 === 0
+            ? `${percent.toFixed(0)}%`
+            : `${percent.toFixed(2)}%`;
+    };
+    
     const { salarioInput, descInput, valorInput, tabela, resumo, btn } = {
         salarioInput: getById('salario'),
         descInput: getById('descricao'),
