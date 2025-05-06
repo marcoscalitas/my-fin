@@ -16,11 +16,29 @@ document.addEventListener('DOMContentLoaded', () => {
         btn: getById('btn-adicionar')
     };
 
+    // regras de validação centralizadas
+    const validationRules = {
+        salario: [
+            { test: v => v.trim() !== '', message: 'Salário é obrigatório.' },
+            { test: v => !isNaN(parseFloat(v)), message: 'Salário deve ser numérico.' },
+            { test: v => parseFloat(v) >= 0, message: 'Salário não pode ser negativo.' }
+        ],
+        descricao: [
+            { test: v => v.trim() !== '', message: 'Descrição é obrigatória.' }
+        ],
+        valor: [
+            { test: v => !isNaN(parseFloat(v)), message: 'Valor numérico obrigatório.' },
+            { test: v => parseFloat(v) >= 0, message: 'O valor não pode ser menor que 0.' }
+        ]
+    };
+
     let despesas = getStorage('despesas') || [];
     let customReserva = getStorage('customReserva');
     let editIndex = null;
 
     function showError(field, message) {
+        clearErrors(field);
+        field.style.borderColor = 'red';
         const div = document.createElement('div');
         div.className = 'error-msg';
         div.style = 'color:red; font-size:0.9em; margin-top:4px';
@@ -33,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (next && next.classList.contains('error-msg')) {
             next.remove();
         }
+        field.style.borderColor = '';
     }
 
     function validateField(field, rules) {
@@ -60,55 +79,55 @@ document.addEventListener('DOMContentLoaded', () => {
         const salario = parseFloat(salarioInput.value) || 0;
         saveAll();
 
-        despesas = despesas.filter(despesa => despesa.descricao !== 'Dízimo');
+        despesas = despesas.filter(d => d.descricao !== 'Dízimo');
         despesas.unshift({ descricao: 'Dízimo', valor: salario * 0.1 });
 
-        const total = despesas.reduce((sum, despesa) => sum + despesa.valor, 0);
+        const total = despesas.reduce((sum, d) => sum + d.valor, 0);
         const reserva = customReserva != null ? customReserva : (salario * 0.5);
         const resto = salario - total - reserva;
 
-        despesas.forEach((despesa, index) => {
+        despesas.forEach((d, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-          <td>${index + 1}</td>
-          <td>${despesa.descricao}</td>
-          <td class="num">${formatCurrency(despesa.valor)}</td>
-          <td class="num">${percentOf(despesa.valor, salario)}</td>
-          <td class="action">
-            <div class="actions">
-              ${despesa.descricao !== 'Dízimo'
-                    ? `<button class="edit" data-idx="${index}"><i class="bi bi-pencil"></i></button>
-                   <button class="delete" data-idx="${index}"><i class="bi bi-trash"></i></button>`
+                <td>${i + 1}</td>
+                <td>${d.descricao}</td>
+                <td class="num">${formatCurrency(d.valor)}</td>
+                <td class="num">${percentOf(d.valor, salario)}</td>
+                <td class="action">
+                  <div class="actions">
+                  ${d.descricao !== 'Dízimo'
+                    ? `<button class="edit" data-idx="${i}"><i class="bi bi-pencil"></i></button>
+                           <button class="delete" data-idx="${i}"><i class="bi bi-trash"></i></button>`
                     : ''}
-            </div>
-          </td>`;
+                  </div>
+                </td>`;
             tabela.appendChild(tr);
         });
 
-        [['Salário Total', salario], ['Total de Despesas', total],
-        ['Reserva', reserva], ['Resto', resto]].forEach(([label, value]) => {
-            const isReserva = label === 'Reserva';
-            const isResto = label === 'Resto';
-            const tr = document.createElement('tr');
-            tr.classList.add('highlight');
-            tr.innerHTML = `
-          <td>*</td>
-          <td>${label}</td>
-          <td class="num ${isResto ? (value >= 0 ? 'positivo' : 'negativo') : ''}"
-              ${isReserva ? 'id="cell-reserva"' : ''}>
-            ${formatCurrency(value)}
-          </td>
-          <td class="num">${percentOf(value, salario)}</td>
-          <td class="action">
-            ${isReserva
-                    ? `<div class="actions">
-                   <button id="edit-reserva" class="edit"><i class="bi bi-pencil"></i></button>
-                   <button id="save-reserva" class="save" style="display:none"><i class="bi bi-check-lg"></i></button>
-                 </div>`
-                    : ''}
-          </td>`;
-            resumo.appendChild(tr);
-        });
+        [['Salário Total', salario], ['Total de Despesas', total], ['Reserva', reserva], ['Resto', resto]]
+            .forEach(([label, value]) => {
+                const isReserva = label === 'Reserva';
+                const isResto = label === 'Resto';
+                const tr = document.createElement('tr');
+                tr.classList.add('highlight');
+                tr.innerHTML = `
+                    <td>*</td>
+                    <td>${label}</td>
+                    <td class="num ${isResto ? (value >= 0 ? 'positivo' : 'negativo') : ''}"
+                        ${isReserva ? 'id="cell-reserva"' : ''}>
+                        ${formatCurrency(value)}
+                    </td>
+                    <td class="num">${percentOf(value, salario)}</td>
+                    <td class="action">
+                        ${isReserva
+                        ? `<div class="actions">
+                                  <button id="edit-reserva" class="edit"><i class="bi bi-pencil"></i></button>
+                                  <button id="save-reserva" class="save" style="display:none"><i class="bi bi-check-lg"></i></button>
+                              </div>`
+                        : ''}
+                    </td>`;
+                resumo.appendChild(tr);
+            });
 
         bindReservaEvents();
     }
@@ -125,13 +144,22 @@ document.addEventListener('DOMContentLoaded', () => {
             cell.innerHTML = `<input id="input-reserva" type="number" min="0" value="${value.toFixed(2)}" style="width:100%;box-sizing:border-box;">`;
             editButton.style.display = 'none';
             saveButton.style.display = 'inline-flex';
+
+            // validação blur para reserva
+            const inputRes = getById('input-reserva');
+            inputRes.addEventListener('blur', () => {
+                validateField(inputRes, [
+                    { test: v => !isNaN(parseFloat(v)), message: 'Reserva deve ser numérica.' },
+                    { test: v => parseFloat(v) >= 0, message: 'Reserva não pode ser negativa.' }
+                ]);
+            });
         };
 
         saveButton.onclick = () => {
             const input = getById('input-reserva');
             if (!validateField(input, [
-                { test: value => !isNaN(parseFloat(value)), message: 'Reserva deve ser numérica.' },
-                { test: value => parseFloat(value) >= 0, message: 'Reserva não pode ser negativa.' }
+                { test: v => !isNaN(parseFloat(v)), message: 'Reserva deve ser numérica.' },
+                { test: v => parseFloat(v) >= 0, message: 'Reserva não pode ser negativa.' }
             ])) return;
 
             customReserva = parseFloat(input.value);
@@ -140,22 +168,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // adicionar/atualizar despesa
     btn.onclick = () => {
-        const validSalario = validateField(salarioInput, [
-            { test: value => value.trim() !== '', message: 'Salário é obrigatório.' },
-            { test: value => !isNaN(parseFloat(value)), message: 'Salário deve ser numérico.' },
-            { test: value => parseFloat(value) >= 0, message: 'Salário não pode ser negativo.' }
-        ]);
-
-        const validDesc = validateField(descInput, [
-            { test: value => value.trim() !== '', message: 'Descrição é obrigatória.' }
-        ]);
-
-        const validValor = validateField(valorInput, [
-            { test: value => !isNaN(parseFloat(value)), message: 'Valor numérico obrigatório.' },
-            { test: value => parseFloat(value) >= 0, message: 'O valor não pode ser menor que 0.' }
-        ]);
-
+        const validSalario = validateField(salarioInput, validationRules.salario);
+        const validDesc = validateField(descInput, validationRules.descricao);
+        const validValor = validateField(valorInput, validationRules.valor);
         if (!validSalario || !validDesc || !validValor) return;
 
         const item = {
@@ -176,9 +193,19 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     };
 
-    salarioInput.oninput = () => clearErrors(salarioInput);
+    // input em tempo real para salário
+    salarioInput.addEventListener('input', () => {
+        clearErrors(salarioInput);
+        render();
+    });
 
-    tabela.onclick = event => {
+    // validação blur para todos os campos
+    salarioInput.addEventListener('blur', () => validateField(salarioInput, validationRules.salario));
+    descInput.addEventListener('blur', () => validateField(descInput, validationRules.descricao));
+    valorInput.addEventListener('blur', () => validateField(valorInput, validationRules.valor));
+
+    // editar e deletar despesas
+    tabela.addEventListener('click', event => {
         const button = event.target.closest('button');
         if (!button) return;
         const index = +button.dataset.idx;
@@ -194,11 +221,13 @@ document.addEventListener('DOMContentLoaded', () => {
             saveAll();
             render();
         }
-    };
+    });
 
+    // carrega salário salvo
     const savedSalario = localStorage.getItem('salario');
     if (savedSalario !== null && !isNaN(parseFloat(savedSalario))) {
         salarioInput.value = parseFloat(savedSalario).toFixed(2);
     }
+
     render();
 });
