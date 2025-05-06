@@ -1,3 +1,4 @@
+// Desestruturação dos elementos do DOM
 const { salarioInput, descInput, valorInput, tabela, resumo, btn } = {
     salarioInput: document.getElementById('salario'),
     descInput: document.getElementById('descricao'),
@@ -7,14 +8,22 @@ const { salarioInput, descInput, valorInput, tabela, resumo, btn } = {
     btn: document.getElementById('btn-adicionar')
 };
 
+// Estado inicial
 let despesas = JSON.parse(localStorage.getItem('despesas')) || [];
 let customReserva = JSON.parse(localStorage.getItem('customReserva'));
 let editIndex = null;
+
+// Carrega salário salvo
+const savedSalario = localStorage.getItem('salario');
+if (savedSalario !== null) {
+    salarioInput.value = parseFloat(savedSalario).toFixed(2);
+}
 
 // Funções auxiliares
 const showError = (el, show) => el.style.display = show ? 'block' : 'none';
 const saveStorage = () => localStorage.setItem('despesas', JSON.stringify(despesas));
 const saveCustomReserva = () => localStorage.setItem('customReserva', JSON.stringify(customReserva));
+const saveSalario = () => localStorage.setItem('salario', salarioInput.value);
 const formatCurrency = (value) => value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 
 // Renderização de tabela e resumo
@@ -23,29 +32,38 @@ function render() {
     resumo.innerHTML = '';
 
     const salario = parseFloat(salarioInput.value) || 0;
+    saveSalario();
+
     despesas = despesas.filter(d => d.descricao !== 'Dízimo');
     const dizimo = salario * 0.1;
     despesas.unshift({ descricao: 'Dízimo', valor: dizimo });
+
     const total = despesas.reduce((sum, d) => sum + d.valor, 0);
-    const reserva = customReserva != null ? customReserva : salario * 0.4;
+    const reserva = (customReserva != null) ? customReserva : (salario * 0.5);
     const resto = salario - total - reserva;
 
-    // Renderiza despesas
+    // Renderiza as despesas com percentagem
     despesas.forEach((d, i) => {
+        const pct = salario > 0 ? ((d.valor / salario) * 100).toFixed(2) + '%' : '-';
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${i + 1}</td>
-            <td>${d.descricao}</td>
-            <td class="num">${formatCurrency(d.valor)}</td>
-            <td class="action">
-                <div class="actions">
-                ${d.descricao !== 'Dízimo' ? `<button class="edit" data-index="${i}"><i class="bi bi-pencil"></i></button><button class="delete" data-index="${i}"><i class="bi bi-trash"></i></button>` : ''}
-                </div>
-            </td>`;
+        <td>${i + 1}</td>
+        <td>${d.descricao}</td>
+        <td class="num">${formatCurrency(d.valor)}</td>
+        <td class="num">${pct}</td>
+        <td class="action">
+          <div class="actions">
+            ${d.descricao !== 'Dízimo'
+                ? `<button class="edit" data-index="${i}"><i class="bi bi-pencil"></i></button>
+                   <button class="delete" data-index="${i}"><i class="bi bi-trash"></i></button>`
+                : ''
+            }
+          </div>
+        </td>`;
         tabela.appendChild(tr);
     });
 
-    // Renderiza resumo
+    // Resumo com percentagens
     const items = [
         ['Salário Total', salario],
         ['Total de Despesas', total],
@@ -53,63 +71,70 @@ function render() {
         ['Resto', resto]
     ];
 
-    items.forEach(([label, val], idx) => {
-        const tr = document.createElement('tr');
-        const isResto = label === 'Resto';
+    // Cabeçalho do resumo
+    const rh = document.createElement('tr');
+    rh.innerHTML = `
+        <th colspan="5">Resumo</th>
+    `;
+    resumo.appendChild(rh);
+
+    items.forEach(([label, val]) => {
+        const pct = salario > 0 ? ((val / salario) * 100).toFixed(2) + '%' : '-';
+        const isResto = (label === 'Resto');
         const className = isResto ? (val >= 0 ? 'positivo' : 'negativo') : '';
-        
+
         const btnReservaActions = `
         <div class="actions">
-            <button id="edit-reserva" class="edit">
-                <i class="bi bi-pencil"></i>
-            </button>
-            <button id="save-reserva" class="save" style="display:none">
-                <i class="bi bi-check-lg"></i>
-            </button>
+          <button id="edit-reserva" class="edit" style="background:#ffc107;"><i class="bi bi-pencil"></i></button>
+          <button id="save-reserva" class="save" style="display:none"><i class="bi bi-check-lg"></i></button>
         </div>`;
-    
+
+        const tr = document.createElement('tr');
         tr.classList.add('highlight');
         tr.innerHTML = `
-        <td colspan="1">*</td>
-            <td>${label}</td>
-            <td class="num ${className}">${formatCurrency(val)}</td>
-            <td class="action">
-                ${label === 'Reserva' ? btnReservaActions : ''}
-            </td>`;
+        <td>*</td>
+        <td>${label}</td>
+        <td class="num ${className}">${formatCurrency(val)}</td>
+        <td class="num">${pct}</td>
+        <td class="action">${label === 'Reserva' ? btnReservaActions : ''}</td>`;
         resumo.appendChild(tr);
     });
 
-    const editBtn = document.getElementById('edit-reserva');
-    const saveBtn = document.getElementById('save-reserva');
+    // Liga eventos de editar/salvar reserva
+    const editReservaBtn = document.getElementById('edit-reserva');
+    const saveReservaBtn = document.getElementById('save-reserva');
 
-    if (editBtn) editBtn.addEventListener('click', () => {
-        const cell = resumo.querySelector('#cell-reserva') || resumo.children[2].children[1];
-        cell.innerHTML = `<input type="number" id="input-reserva" value="${reserva.toFixed(2)}" min="0" style="width:100%;box-sizing:border-box;">`;
-        editBtn.style.display = 'none'; saveBtn.style.display = 'inline-flex';
-    });
+    if (editReservaBtn) {
+        editReservaBtn.addEventListener('click', () => {
+            const cell = document.getElementById('cell-reserva');
+            cell.innerHTML = `<input type="number" id="input-reserva" value="${reserva.toFixed(2)}" min="0" style="width:100%;box-sizing:border-box;">`;
+            editReservaBtn.style.display = 'none';
+            saveReservaBtn.style.display = 'inline-flex';
+        });
+    }
 
-    if (saveBtn) saveBtn.addEventListener('click', () => {
-        const input = document.getElementById('input-reserva');
-        const val = parseFloat(input.value);
-        
-        // Remove mensagem de erro anterior, se houver
-        let error = document.getElementById('error-reserva');
-        if (error) error.remove();
-    
-        if (isNaN(val) || val < 0) {
-            const errorMsg = document.createElement('div');
-            errorMsg.id = 'error-reserva';
-            errorMsg.textContent = 'A reserva não pode ser menor que 0.';
-            errorMsg.style.color = 'red';
-            errorMsg.style.fontSize = '0.9em';
-            input.insertAdjacentElement('afterend', errorMsg);
-            return;
-        }
-    
-        customReserva = val;
-        saveCustomReserva();
-        render();
-    });
+    if (saveReservaBtn) {
+        saveReservaBtn.addEventListener('click', () => {
+            const input = document.getElementById('input-reserva');
+            const val = parseFloat(input.value);
+            const oldError = document.getElementById('error-reserva');
+            if (oldError) oldError.remove();
+
+            if (isNaN(val) || val < 0) {
+                const errorMsg = document.createElement('div');
+                errorMsg.id = 'error-reserva';
+                errorMsg.textContent = 'A reserva não pode ser menor que 0.';
+                errorMsg.style.color = 'red';
+                errorMsg.style.fontSize = '0.9em';
+                input.insertAdjacentElement('afterend', errorMsg);
+                return;
+            }
+
+            customReserva = val;
+            saveCustomReserva();
+            render();
+        });
+    }
 }
 
 // Adiciona ou atualiza despesas
@@ -122,9 +147,9 @@ btn.addEventListener('click', () => {
 
     if (!desc || isNaN(val)) return;
 
-    // Verificação de reserva no valor
     if (val < 0) {
-        // Exibe mensagem de erro
+        const existing = document.getElementById('error-valor');
+        if (existing) existing.remove();
         const errorMsg = document.createElement('div');
         errorMsg.id = 'error-valor';
         errorMsg.textContent = 'O valor da despesa não pode ser menor que 0.';
@@ -135,54 +160,26 @@ btn.addEventListener('click', () => {
     }
 
     const item = { descricao: desc, valor: val };
-
-    if (editIndex != null) { 
+    if (editIndex != null) {
         despesas[editIndex] = item;
-        editIndex = null; 
-        btn.textContent = 'Adicionar Despesa'; 
-    } else { 
-        despesas.push(item); 
+        editIndex = null;
+        btn.textContent = 'Adicionar Despesa';
+    } else {
+        despesas.push(item);
     }
 
-    saveStorage(); 
-    descInput.value = ''; 
-    valorInput.value = ''; 
+    saveStorage();
+    descInput.value = '';
+    valorInput.value = '';
     render();
 });
 
-// Atualiza a renderização ao alterar o valor da reserva
-const saveBtn = document.getElementById('save-reserva');
-if (saveBtn) saveBtn.addEventListener('click', () => {
-    const input = document.getElementById('input-reserva');
-    const val = parseFloat(input.value);
-
-    // Remove mensagem de erro anterior, se houver
-    let error = document.getElementById('error-reserva');
-    if (error) error.remove();
-
-    if (isNaN(val) || val < 0) {
-        const errorMsg = document.createElement('div');
-        errorMsg.id = 'error-reserva';
-        errorMsg.textContent = 'A reserva não pode ser menor que 0.';
-        errorMsg.style.color = 'red';
-        errorMsg.style.fontSize = '0.9em';
-        input.insertAdjacentElement('afterend', errorMsg);
-        return;
-    }
-
-    customReserva = val;
-    saveCustomReserva();
-    render();
-});
-
-
-// Editar ou excluir despesas
+// Editar/excluir despesas
+// (mesma lógica original, sem alterações)
 tabela.addEventListener('click', e => {
     const bt = e.target.closest('button');
     if (!bt) return;
-
     const idx = +bt.dataset.index;
-
     if (bt.classList.contains('edit') && !bt.id) {
         const d = despesas[idx];
         descInput.value = d.descricao;
@@ -190,14 +187,15 @@ tabela.addEventListener('click', e => {
         editIndex = idx;
         btn.textContent = 'Atualizar Despesa';
     }
-
-    if (bt.classList.contains('delete')) { 
+    if (bt.classList.contains('delete')) {
         despesas.splice(idx, 1);
         saveStorage();
-        render(); 
+        render();
     }
 });
 
-// Atualiza a renderização ao alterar salário
+// Atualiza ao mudar salário
 salarioInput.addEventListener('input', render);
+
+// Renderiza inicialmente
 render();
