@@ -6,8 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formatCurrency = value => value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     const percentOf = (value, total) => total > 0 ? (value / total * 100).toFixed(2) + '%' : '-';
 
-    const { salarioInput, descInput, valorInput, tabela, resumo, btn
-    } = {
+    const { salarioInput, descInput, valorInput, tabela, resumo, btn } = {
         salarioInput: getById('salario'),
         descInput: getById('descricao'),
         valorInput: getById('valor'),
