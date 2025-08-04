@@ -72,7 +72,7 @@ input[type="text"] {
     color: red;
     font-size: 0.9em;
     margin-top: 4px;
-    
+
 }
 
 button {
@@ -101,7 +101,7 @@ button:hover {
     overflow-x: auto;
     margin-top: 2rem;
     border-radius: 12px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* MELHORIA NA TABELA */
@@ -182,10 +182,25 @@ tr:nth-child(even) td {
     font-weight: bold;
 }
 
-#tabela, #tabela th, #tabela td,
-#resumo, #resumo th, #resumo td, .txt-center {
+#tabela,
+#tabela th,
+#tabela td,
+#resumo,
+#resumo th,
+#resumo td,
+.txt-center {
     text-align: center;
     vertical-align: middle;
+}
+
+.custom-label-btn {
+    background: #ffb300 !important;
+    color: #fff !important;
+}
+
+.custom-label-btn:hover {
+    filter: brightness(0.95);
+    background: #ff9800 !important;
 }
 
 

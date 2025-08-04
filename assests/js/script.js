@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const getStorage = key => JSON.parse(localStorage.getItem(key));
     const setStorage = (key, value) => localStorage.setItem(key, JSON.stringify(value));
     const formatCurrency = value => value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-    
     const percentOf = (value, total) => {
         if (total <= 0) return '-';
         const percent = (value / total * 100);
@@ -12,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `${percent.toFixed(0)}%`
             : `${percent.toFixed(2)}%`;
     };
-    
+
     const { salarioInput, descInput, valorInput, tabela, resumo, btn } = {
         salarioInput: getById('salario'),
         descInput: getById('descricao'),
@@ -22,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btn: getById('btn-adicionar')
     };
 
-    // regras de validação centralizadas
     const validationRules = {
         salario: [
             { test: v => v.trim() !== '', message: 'Salário é obrigatório.' },
@@ -40,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let despesas = getStorage('despesas') || [];
     let customReserva = getStorage('customReserva');
+    let customReservaLabel = getStorage('customReservaLabel') || 'Reserva';
+    let customRestoLabel = getStorage('customRestoLabel') || 'Resto';
     let editIndex = null;
 
     function showError(field, message) {
@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveAll = () => {
         setStorage('despesas', despesas);
         setStorage('customReserva', customReserva);
+        setStorage('customReservaLabel', customReservaLabel);
+        setStorage('customRestoLabel', customRestoLabel);
         const num = parseFloat(salarioInput.value);
         localStorage.setItem('salario', isNaN(num) ? '0' : num.toString());
     };
@@ -110,32 +112,44 @@ document.addEventListener('DOMContentLoaded', () => {
             tabela.appendChild(tr);
         });
 
-        [['Salário Total', salario], ['Total de Despesas', total], ['Reserva', reserva], ['Resto', resto]]
-            .forEach(([label, value]) => {
-                const isReserva = label === 'Reserva';
-                const isResto = label === 'Resto';
-                const tr = document.createElement('tr');
-                tr.classList.add('highlight');
-                tr.innerHTML = `
-                    <td>*</td>
-                    <td>${label}</td>
-                    <td class="num ${isResto ? (value >= 0 ? 'positivo' : 'negativo') : ''}"
-                        ${isReserva ? 'id="cell-reserva"' : ''}>
-                        ${formatCurrency(value)}
-                    </td>
-                    <td class="num">${percentOf(value, salario)}</td>
-                    <td class="action">
-                        ${isReserva
-                        ? `<div class="actions">
-                                  <button id="edit-reserva" class="edit"><i class="bi bi-pencil"></i></button>
-                                  <button id="save-reserva" class="save" style="display:none"><i class="bi bi-check-lg"></i></button>
-                              </div>`
-                        : ''}
-                    </td>`;
-                resumo.appendChild(tr);
-            });
+        [
+            ['Salário Total', salario],
+            ['Total de Despesas', total],
+            [customReservaLabel, reserva, 'reserva'],
+            [customRestoLabel, resto, 'resto']
+        ].forEach(([label, value, type]) => {
+            const isReserva = type === 'reserva';
+            const isResto = type === 'resto';
+            const tr = document.createElement('tr');
+            tr.classList.add('highlight');
+            tr.innerHTML = `
+        <td>*</td>
+        <td>
+            <span class="editable-label" id="label-${type || ''}">${label}</span>
+        </td>
+        <td class="num ${isResto ? (value >= 0 ? 'positivo' : 'negativo') : ''}"
+            ${isReserva ? 'id="cell-reserva"' : ''}>
+            ${formatCurrency(value)}
+        </td>
+        <td class="num">${percentOf(value, salario)}</td>
+        <td class="action">
+            ${(isReserva || isResto) ? `
+                <div class="actions">
+                    ${isReserva ? `
+                        <button id="edit-reserva" class="edit"><i class="bi bi-pencil"></i></button>
+                        <button id="save-reserva" class="save" style="display:none"><i class="bi bi-check-lg"></i></button>
+                    ` : ''}
+                    <button class="edit-label custom-label-btn" data-type="${type}" title="Editar texto">
+                        <i class="bi bi-type"></i>
+                    </button>
+                </div>
+            ` : ''}
+        </td>`;
+            resumo.appendChild(tr);
+        });
 
         bindReservaEvents();
+        bindLabelEditEvents();
     }
 
     function bindReservaEvents() {
@@ -151,13 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
             editButton.style.display = 'none';
             saveButton.style.display = 'inline-flex';
 
-            // validação blur para reserva
             const inputRes = getById('input-reserva');
             inputRes.addEventListener('blur', () => {
                 validateField(inputRes, [
                     { test: v => !isNaN(parseFloat(v)), message: 'Reserva deve ser numérica.' },
                     { test: v => parseFloat(v) >= 0, message: 'Reserva não pode ser negativa.' }
                 ]);
+            });
+
+            inputRes.addEventListener('keydown', e => {
+                if (e.key === 'Enter') saveButton.click();
             });
         };
 
@@ -174,7 +191,53 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // adicionar/atualizar despesa
+    function bindLabelEditEvents() {
+        resumo.querySelectorAll('.edit-label').forEach(btn => {
+            btn.onclick = () => {
+                const type = btn.dataset.type;
+                const span = resumo.querySelector(`#label-${type}`);
+                const current = span.textContent.trim();
+                span.innerHTML = `<input type="text" id="input-label-${type}" value="${current}" style="width:80%">`;
+
+                const input = resumo.querySelector(`#input-label-${type}`);
+                input.focus();
+
+                btn.style.display = 'none';
+
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'save-label';
+                saveBtn.style.backgroundColor = '#28a745';
+                saveBtn.innerHTML = '<i class="bi bi-check-lg"></i>';
+                saveBtn.title = 'Salvar legenda';
+
+                btn.parentElement.appendChild(saveBtn);
+
+                const finishEdit = () => {
+                    saveLabel(type, input.value);
+                    saveBtn.remove();
+                    btn.style.display = 'inline-flex';
+                };
+
+                input.onblur = finishEdit;
+                input.onkeydown = e => {
+                    if (e.key === 'Enter') finishEdit();
+                };
+                saveBtn.onclick = finishEdit;
+            };
+        });
+    }
+
+    function saveLabel(type, value) {
+        if (type === 'reserva') {
+            customReservaLabel = value.trim() || 'Reserva';
+            setStorage('customReservaLabel', customReservaLabel);
+        } else if (type === 'resto') {
+            customRestoLabel = value.trim() || 'Resto';
+            setStorage('customRestoLabel', customRestoLabel);
+        }
+        render();
+    }
+
     btn.onclick = () => {
         const validSalario = validateField(salarioInput, validationRules.salario);
         const validDesc = validateField(descInput, validationRules.descricao);
@@ -199,18 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     };
 
-    // input em tempo real para salário
     salarioInput.addEventListener('input', () => {
         clearErrors(salarioInput);
         render();
     });
 
-    // validação blur para todos os campos
     salarioInput.addEventListener('blur', () => validateField(salarioInput, validationRules.salario));
     descInput.addEventListener('blur', () => validateField(descInput, validationRules.descricao));
     valorInput.addEventListener('blur', () => validateField(valorInput, validationRules.valor));
 
-    // editar e deletar despesas
     tabela.addEventListener('click', event => {
         const button = event.target.closest('button');
         if (!button) return;
@@ -229,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // carrega salário salvo
     const savedSalario = localStorage.getItem('salario');
     if (savedSalario !== null && !isNaN(parseFloat(savedSalario))) {
         salarioInput.value = parseFloat(savedSalario).toFixed(2);
