@@ -7,9 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const percentOf = (value, total) => {
         if (total <= 0) return '-';
         const percent = (value / total * 100);
-        return percent % 1 === 0
-            ? `${percent.toFixed(0)}%`
-            : `${percent.toFixed(2)}%`;
+        return percent % 1 === 0 ? `${percent.toFixed(0)}%` : `${percent.toFixed(2)}%`;
     };
 
     const { salarioInput, descInput, valorInput, tabela, resumo, btn } = {
@@ -102,12 +100,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="num">${formatCurrency(d.valor)}</td>
                 <td class="num">${percentOf(d.valor, salario)}</td>
                 <td class="action">
-                  <div class="actions">
-                  ${d.descricao !== 'Dízimo'
-                    ? `<button class="edit" data-idx="${i}"><i class="bi bi-pencil"></i></button>
-                           <button class="delete" data-idx="${i}"><i class="bi bi-trash"></i></button>`
-                    : ''}
-                  </div>
+                    <div class="actions">
+                        ${d.descricao !== 'Dízimo' ? `
+                            <button class="edit" data-idx="${i}"><i class="bi bi-pencil"></i></button>
+                            <button class="delete" data-idx="${i}"><i class="bi bi-trash"></i></button>
+                        ` : ''}
+                    </div>
                 </td>`;
             tabela.appendChild(tr);
         });
@@ -123,28 +121,31 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr = document.createElement('tr');
             tr.classList.add('highlight');
             tr.innerHTML = `
-        <td>*</td>
-        <td>
-            <span class="editable-label" id="label-${type || ''}">${label}</span>
-        </td>
-        <td class="num ${isResto ? (value >= 0 ? 'positivo' : 'negativo') : ''}"
-            ${isReserva ? 'id="cell-reserva"' : ''}>
-            ${formatCurrency(value)}
-        </td>
-        <td class="num">${percentOf(value, salario)}</td>
-        <td class="action">
-            ${(isReserva || isResto) ? `
-                <div class="actions">
-                    ${isReserva ? `
-                        <button id="edit-reserva" class="edit"><i class="bi bi-pencil"></i></button>
-                        <button id="save-reserva" class="save" style="display:none"><i class="bi bi-check-lg"></i></button>
-                    ` : ''}
-                    <button class="edit-label custom-label-btn" data-type="${type}" title="Editar texto">
-                        <i class="bi bi-type"></i>
-                    </button>
-                </div>
-            ` : ''}
-        </td>`;
+                <td>*</td>
+                <td>
+                    <span class="editable-label" id="label-${type || ''}">${label}</span>
+                </td>
+                <td class="num ${isResto ? (value >= 0 ? 'positivo' : 'negativo') : ''}" ${isReserva ? 'id="cell-reserva"' : ''}>
+                    ${formatCurrency(value)}
+                </td>
+                <td class="num">${percentOf(value, salario)}</td>
+                <td class="action">
+                    <div class="actions vertical">
+                        ${(isReserva) ? `
+                            <div class="btn-group value-group">
+                                <button id="edit-reserva-completo" class="edit" title="Editar reserva"><i class="bi bi-pencil"></i></button>
+                                <button id="save-reserva-completo" class="save" style="display:none" title="Salvar"><i class="bi bi-check-lg"></i></button>
+                            </div>
+                        ` : ''}
+                        ${(isResto) ? `
+                            <div class="btn-group label-group">
+                                <button class="edit-label custom-label-btn" data-type="${type}" title="Editar texto">
+                                    <i class="bi bi-type"></i>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </td>`;
             resumo.appendChild(tr);
         });
 
@@ -153,39 +154,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function bindReservaEvents() {
-        const editButton = getById('edit-reserva');
-        const saveButton = getById('save-reserva');
-        if (!editButton || !saveButton) return;
+        const editBtn = getById('edit-reserva-completo');
+        const saveBtn = getById('save-reserva-completo');
+        if (!editBtn || !saveBtn) return;
 
-        editButton.onclick = () => {
+        editBtn.onclick = () => {
             const base = parseFloat(salarioInput.value) || 0;
-            const value = customReserva != null ? customReserva : (base * 0.5);
+            const valorAtual = customReserva != null ? customReserva : (base * 0.5);
             const cell = getById('cell-reserva');
-            cell.innerHTML = `<input id="input-reserva" type="number" min="0" value="${value.toFixed(2)}" style="width:100%;box-sizing:border-box;">`;
-            editButton.style.display = 'none';
-            saveButton.style.display = 'inline-flex';
+            const labelSpan = getById('label-reserva');
+            const labelAtual = labelSpan.textContent.trim();
 
-            const inputRes = getById('input-reserva');
-            inputRes.addEventListener('blur', () => {
-                validateField(inputRes, [
-                    { test: v => !isNaN(parseFloat(v)), message: 'Reserva deve ser numérica.' },
-                    { test: v => parseFloat(v) >= 0, message: 'Reserva não pode ser negativa.' }
-                ]);
-            });
+            cell.innerHTML = `<input id="input-reserva" type="number" min="0" value="${valorAtual.toFixed(2)}" style="width:100%;box-sizing:border-box;">`;
+            labelSpan.innerHTML = `<input type="text" id="input-label-reserva" value="${labelAtual}" style="width:80%">`;
 
-            inputRes.addEventListener('keydown', e => {
-                if (e.key === 'Enter') saveButton.click();
-            });
+            editBtn.style.display = 'none';
+            saveBtn.style.display = 'inline-flex';
+
+            const inputValor = getById('input-reserva');
+            const inputLabel = getById('input-label-reserva');
+
+            inputValor.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
+            inputLabel.addEventListener('keydown', e => { if (e.key === 'Enter') saveBtn.click(); });
         };
 
-        saveButton.onclick = () => {
-            const input = getById('input-reserva');
-            if (!validateField(input, [
+        saveBtn.onclick = () => {
+            const inputValor = getById('input-reserva');
+            const inputLabel = getById('input-label-reserva');
+
+            if (!validateField(inputValor, [
                 { test: v => !isNaN(parseFloat(v)), message: 'Reserva deve ser numérica.' },
                 { test: v => parseFloat(v) >= 0, message: 'Reserva não pode ser negativa.' }
             ])) return;
 
-            customReserva = parseFloat(input.value);
+            customReserva = parseFloat(inputValor.value);
+            customReservaLabel = inputLabel.value.trim() || 'Reserva';
+
             saveAll();
             render();
         };
@@ -201,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const input = resumo.querySelector(`#input-label-${type}`);
                 input.focus();
-
                 btn.style.display = 'none';
 
                 const saveBtn = document.createElement('button');
@@ -210,7 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveBtn.innerHTML = '<i class="bi bi-check-lg"></i>';
                 saveBtn.title = 'Salvar legenda';
 
-                btn.parentElement.appendChild(saveBtn);
+                const group = btn.closest('.label-group');
+                group.appendChild(saveBtn);
 
                 const finishEdit = () => {
                     saveLabel(type, input.value);
@@ -219,9 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 input.onblur = finishEdit;
-                input.onkeydown = e => {
-                    if (e.key === 'Enter') finishEdit();
-                };
+                input.onkeydown = e => { if (e.key === 'Enter') finishEdit(); };
                 saveBtn.onclick = finishEdit;
             };
         });
