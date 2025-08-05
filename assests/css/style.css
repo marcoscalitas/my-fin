@@ -78,6 +78,11 @@ select {
     border: 1px solid var(--border);
 }
 
+.custom-label-btn {
+    background-color: #f39c12;
+    border: none;
+}
+
 .beta-tag {
     font-size: 0.7rem;
     background-color: #f39c12; 
