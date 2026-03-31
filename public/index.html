@@ -14,7 +14,74 @@
     <main>
         <div class="app-header">
             <span id="user-greeting"></span>
-            <button id="btn-logout" class="btn-logout">Sair</button>
+            <div class="header-actions">
+                <button id="btn-profile" class="btn-profile" title="Meu Perfil"><i class="bi bi-person-circle"></i></button>
+                <button id="btn-logout" class="btn-logout">Sair</button>
+            </div>
+        </div>
+
+        <!-- Modal de Perfil -->
+        <div id="profile-modal" class="modal-overlay" style="display:none">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h2>Meu Perfil</h2>
+                    <button id="modal-close" class="modal-close" title="Fechar">&times;</button>
+                </div>
+
+                <div id="profile-msg" class="profile-msg" style="display:none"></div>
+
+                <!-- Aba de navegação -->
+                <div class="profile-tabs">
+                    <button class="profile-tab active" data-tab="tab-info">Dados</button>
+                    <button class="profile-tab" data-tab="tab-password">Senha</button>
+                    <button class="profile-tab" data-tab="tab-danger">Excluir Conta</button>
+                </div>
+
+                <!-- Tab: Dados -->
+                <div id="tab-info" class="tab-content active">
+                    <form id="form-profile" autocomplete="off">
+                        <div class="form-group">
+                            <label for="profile-name">Nome</label>
+                            <input type="text" id="profile-name" />
+                        </div>
+                        <div class="form-group">
+                            <label for="profile-email">Email</label>
+                            <input type="email" id="profile-email" />
+                        </div>
+                        <button type="submit">Salvar Alterações</button>
+                    </form>
+                </div>
+
+                <!-- Tab: Senha -->
+                <div id="tab-password" class="tab-content">
+                    <form id="form-password" autocomplete="off">
+                        <div class="form-group">
+                            <label for="current-password">Senha Atual</label>
+                            <input type="password" id="current-password" />
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">Nova Senha</label>
+                            <input type="password" id="new-password" />
+                        </div>
+                        <p class="password-hint">Mínimo 8 caracteres, com maiúscula, minúscula, número e caractere especial.</p>
+                        <button type="submit">Alterar Senha</button>
+                    </form>
+                </div>
+
+                <!-- Tab: Excluir Conta -->
+                <div id="tab-danger" class="tab-content">
+                    <div class="danger-zone">
+                        <p><strong>Atenção:</strong> Esta ação é irreversível. Todos os seus dados (despesas, configurações) serão excluídos permanentemente.</p>
+                        <form id="form-delete" autocomplete="off">
+                            <div class="form-group">
+                                <label for="delete-password">Confirme sua senha</label>
+                                <input type="password" id="delete-password" />
+                            </div>
+                            <button type="submit" class="btn-danger">Excluir Minha Conta</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <section class="card" aria-labelledby="calc-title">

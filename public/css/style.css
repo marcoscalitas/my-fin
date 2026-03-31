@@ -358,6 +358,31 @@ tr:nth-child(even) td {
     color: var(--text);
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-profile {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: filter 0.2s;
+}
+
+.btn-profile:hover {
+    filter: brightness(0.85);
+}
+
 .btn-logout {
     width: auto;
     padding: 0.4rem 1rem;
@@ -385,4 +410,147 @@ input[type="password"] {
     border-radius: var(--primary-border-radius);
     color: #666;
     padding: .70rem;
+}
+
+/* ===== PROFILE MODAL ===== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-card {
+    background: var(--card);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 1.5rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: var(--text);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    color: #999;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: auto;
+    margin-top: 0;
+}
+
+.modal-close:hover {
+    color: var(--text);
+}
+
+/* Profile Tabs */
+.profile-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1rem;
+    gap: 0;
+}
+
+.profile-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    width: auto;
+    margin-top: 0;
+}
+
+.profile-tab:hover {
+    color: var(--text);
+}
+
+.profile-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Profile Messages */
+.profile-msg {
+    padding: 0.6rem 1rem;
+    border-radius: var(--primary-border-radius);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.profile-msg.success {
+    background: #f0fff4;
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.profile-msg.error {
+    background: #fff0f0;
+    color: var(--error);
+    border: 1px solid var(--error);
+}
+
+/* Password Hint */
+.password-hint {
+    font-size: 0.8rem;
+    color: #888;
+    margin: -0.25rem 0 0.75rem;
+}
+
+/* Danger Zone */
+.danger-zone {
+    border: 1px solid var(--danger);
+    border-radius: var(--primary-border-radius);
+    padding: 1rem;
+}
+
+.danger-zone p {
+    font-size: 0.9rem;
+    color: var(--danger);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.btn-danger {
+    background: var(--danger) !important;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    filter: brightness(0.9);
 }

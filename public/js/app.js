@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = getById('btn-adicionar');
     const userGreeting = getById('user-greeting');
     const btnLogout = getById('btn-logout');
+    const btnProfile = getById('btn-profile');
+    const profileModal = getById('profile-modal');
+    const modalClose = getById('modal-close');
+    const profileMsg = getById('profile-msg');
 
     const validationRules = {
         salario: [
@@ -350,12 +354,105 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // === Check Session — redirect to login if not authenticated ===
+    let currentUser = null;
+
     (async () => {
         try {
             const data = await api('/api/auth/me');
+            currentUser = data.user;
             await loadApp(data.user);
         } catch {
             window.location.href = '/login.html';
         }
     })();
+
+    // === PROFILE MODAL ===
+    function showProfileMsg(text, type) {
+        profileMsg.textContent = text;
+        profileMsg.className = `profile-msg ${type}`;
+        profileMsg.style.display = 'block';
+        setTimeout(() => { profileMsg.style.display = 'none'; }, 4000);
+    }
+
+    // Abrir/Fechar modal
+    btnProfile.onclick = () => {
+        if (currentUser) {
+            getById('profile-name').value = currentUser.name;
+            getById('profile-email').value = currentUser.email;
+        }
+        profileMsg.style.display = 'none';
+        profileModal.style.display = 'flex';
+    };
+
+    modalClose.onclick = () => { profileModal.style.display = 'none'; };
+    profileModal.onclick = e => { if (e.target === profileModal) profileModal.style.display = 'none'; };
+
+    // Tabs
+    document.querySelectorAll('.profile-tab').forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            getById(tab.dataset.tab).classList.add('active');
+            profileMsg.style.display = 'none';
+        };
+    });
+
+    // Atualizar perfil (nome/email)
+    getById('form-profile').onsubmit = async e => {
+        e.preventDefault();
+        const name = getById('profile-name').value.trim();
+        const email = getById('profile-email').value.trim();
+
+        if (!name || name.length < 2) return showProfileMsg('Nome deve ter pelo menos 2 caracteres.', 'error');
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showProfileMsg('Email inválido.', 'error');
+
+        try {
+            const data = await api('/api/auth/update', { method: 'PUT', body: { name, email } });
+            currentUser = data.user;
+            userGreeting.textContent = `Olá, ${data.user.name}`;
+            showProfileMsg('Perfil atualizado com sucesso!', 'success');
+        } catch (err) {
+            showProfileMsg(err.message, 'error');
+        }
+    };
+
+    // Alterar senha
+    getById('form-password').onsubmit = async e => {
+        e.preventDefault();
+        const currentPassword = getById('current-password').value;
+        const newPassword = getById('new-password').value;
+
+        if (!currentPassword) return showProfileMsg('Informe a senha atual.', 'error');
+        if (newPassword.length < 8) return showProfileMsg('Nova senha deve ter pelo menos 8 caracteres.', 'error');
+        if (!/[A-Z]/.test(newPassword)) return showProfileMsg('Deve conter pelo menos uma maiúscula.', 'error');
+        if (!/[a-z]/.test(newPassword)) return showProfileMsg('Deve conter pelo menos uma minúscula.', 'error');
+        if (!/[0-9]/.test(newPassword)) return showProfileMsg('Deve conter pelo menos um número.', 'error');
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)) return showProfileMsg('Deve conter pelo menos um caractere especial.', 'error');
+
+        try {
+            await api('/api/auth/change-password', { method: 'PUT', body: { currentPassword, newPassword } });
+            getById('current-password').value = '';
+            getById('new-password').value = '';
+            showProfileMsg('Senha alterada com sucesso!', 'success');
+        } catch (err) {
+            showProfileMsg(err.message, 'error');
+        }
+    };
+
+    // Excluir conta
+    getById('form-delete').onsubmit = async e => {
+        e.preventDefault();
+        const password = getById('delete-password').value;
+
+        if (!password) return showProfileMsg('Informe a senha para confirmar.', 'error');
+        if (!confirm('Tem certeza que deseja excluir sua conta? Esta ação é IRREVERSÍVEL.')) return;
+
+        try {
+            await api('/api/auth/delete', { method: 'DELETE', body: { password } });
+            window.location.href = '/login.html';
+        } catch (err) {
+            showProfileMsg(err.message, 'error');
+        }
+    };
 });
