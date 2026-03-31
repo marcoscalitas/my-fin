@@ -1,23 +1,42 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // === Helpers & Estado ===
+    // === Helpers ===
     const getById = id => document.getElementById(id);
-    const getStorage = key => JSON.parse(localStorage.getItem(key));
-    const setStorage = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-    const formatCurrency = value => value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    const formatCurrency = value => Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
     const percentOf = (value, total) => {
         if (total <= 0) return '-';
         const percent = (value / total * 100);
         return percent % 1 === 0 ? `${percent.toFixed(0)}%` : `${percent.toFixed(2)}%`;
     };
 
-    const { salarioInput, descInput, valorInput, tabela, resumo, btn } = {
-        salarioInput: getById('salario'),
-        descInput: getById('descricao'),
-        valorInput: getById('valor'),
-        tabela: getById('tabela'),
-        resumo: getById('resumo'),
-        btn: getById('btn-adicionar')
-    };
+    async function api(url, options = {}) {
+        const res = await fetch(url, {
+            headers: { 'Content-Type': 'application/json' },
+            ...options,
+            body: options.body ? JSON.stringify(options.body) : undefined,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro na requisição');
+        return data;
+    }
+
+    // === Auth Elements ===
+    const authSection = getById('auth-section');
+    const appSection = getById('app-section');
+    const loginForm = getById('login-form');
+    const registerForm = getById('register-form');
+    const authError = getById('auth-error');
+    const showRegisterLink = getById('show-register');
+    const showLoginLink = getById('show-login');
+    const userGreeting = getById('user-greeting');
+    const btnLogout = getById('btn-logout');
+
+    // === App Elements ===
+    const salarioInput = getById('salario');
+    const descInput = getById('descricao');
+    const valorInput = getById('valor');
+    const tabela = getById('tabela');
+    const resumo = getById('resumo');
+    const btn = getById('btn-adicionar');
 
     const validationRules = {
         salario: [
@@ -34,12 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    let despesas = getStorage('despesas') || [];
-    let customReserva = getStorage('customReserva');
-    let customReservaLabel = getStorage('customReservaLabel') || 'Reserva';
-    let customRestoLabel = getStorage('customRestoLabel') || 'Resto';
-    let editIndex = null;
+    // === State ===
+    let despesas = [];
+    let settings = { salario: 0, custom_reserva: null, custom_reserva_label: 'Reserva', custom_resto_label: 'Resto' };
+    let editId = null;
+    let currentUser = null;
 
+    // === Error/Validation Helpers ===
     function showError(field, message) {
         clearErrors(field);
         field.style.borderColor = 'red';
@@ -52,9 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function clearErrors(field) {
         const next = field.nextElementSibling;
-        if (next && next.classList.contains('error-msg')) {
-            next.remove();
-        }
+        if (next && next.classList.contains('error-msg')) next.remove();
         field.style.borderColor = '';
     }
 
@@ -69,46 +87,142 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    const saveAll = () => {
-        setStorage('despesas', despesas);
-        setStorage('customReserva', customReserva);
-        setStorage('customReservaLabel', customReservaLabel);
-        setStorage('customRestoLabel', customRestoLabel);
-        const num = parseFloat(salarioInput.value);
-        localStorage.setItem('salario', isNaN(num) ? '0' : num.toString());
+    function showAuthError(msg) {
+        authError.textContent = msg;
+        authError.style.display = 'block';
+    }
+
+    function hideAuthError() {
+        authError.style.display = 'none';
+    }
+
+    // === Auth Toggle ===
+    showRegisterLink.onclick = e => {
+        e.preventDefault();
+        hideAuthError();
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
     };
 
+    showLoginLink.onclick = e => {
+        e.preventDefault();
+        hideAuthError();
+        registerForm.style.display = 'none';
+        loginForm.style.display = 'block';
+    };
+
+    // === Auth Handlers ===
+    loginForm.onsubmit = async e => {
+        e.preventDefault();
+        hideAuthError();
+        const email = getById('login-email').value.trim();
+        const password = getById('login-password').value;
+
+        try {
+            const data = await api('/api/auth/login', { method: 'POST', body: { email, password } });
+            currentUser = data.user;
+            await enterApp();
+        } catch (err) {
+            showAuthError(err.message);
+        }
+    };
+
+    registerForm.onsubmit = async e => {
+        e.preventDefault();
+        hideAuthError();
+        const name = getById('reg-name').value.trim();
+        const email = getById('reg-email').value.trim();
+        const password = getById('reg-password').value;
+
+        try {
+            const data = await api('/api/auth/register', { method: 'POST', body: { name, email, password } });
+            currentUser = data.user;
+            await enterApp();
+        } catch (err) {
+            showAuthError(err.message);
+        }
+    };
+
+    btnLogout.onclick = async () => {
+        await api('/api/auth/logout', { method: 'POST' });
+        currentUser = null;
+        despesas = [];
+        settings = { salario: 0, custom_reserva: null, custom_reserva_label: 'Reserva', custom_resto_label: 'Resto' };
+        appSection.style.display = 'none';
+        authSection.style.display = 'flex';
+    };
+
+    // === Enter App ===
+    async function enterApp() {
+        authSection.style.display = 'none';
+        appSection.style.display = 'block';
+        userGreeting.textContent = `Olá, ${currentUser.name}`;
+
+        // Carregar dados do servidor
+        const [despData, setData] = await Promise.all([
+            api('/api/despesas'),
+            api('/api/settings'),
+        ]);
+
+        despesas = despData.despesas;
+        settings = setData.settings;
+        salarioInput.value = Number(settings.salario).toFixed(2);
+        render();
+    }
+
+    // === Save Settings (debounced) ===
+    let saveTimer = null;
+    function saveSettings() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(async () => {
+            const salario = parseFloat(salarioInput.value) || 0;
+            await api('/api/settings', {
+                method: 'PUT',
+                body: {
+                    salario,
+                    custom_reserva: settings.custom_reserva,
+                    custom_reserva_label: settings.custom_reserva_label,
+                    custom_resto_label: settings.custom_resto_label,
+                },
+            });
+        }, 500);
+    }
+
+    // === Render Table ===
     function render() {
         tabela.innerHTML = '';
         resumo.innerHTML = '';
 
         const salario = parseFloat(salarioInput.value) || 0;
-        saveAll();
+        const dizimo = salario * 0.1;
 
-        despesas = despesas.filter(d => d.descricao !== 'Dízimo');
-        despesas.unshift({ descricao: 'Dízimo', valor: salario * 0.1 });
+        // Montar lista com dízimo na frente
+        const allDespesas = [{ id: null, descricao: 'Dízimo', valor: dizimo }, ...despesas];
 
-        const total = despesas.reduce((sum, d) => sum + d.valor, 0);
-        const reserva = customReserva != null ? customReserva : (salario * 0.5);
+        const total = allDespesas.reduce((sum, d) => sum + Number(d.valor), 0);
+        const reserva = settings.custom_reserva != null ? Number(settings.custom_reserva) : (salario * 0.5);
         const resto = salario - total - reserva;
 
-        despesas.forEach((d, i) => {
+        allDespesas.forEach((d, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${i + 1}</td>
                 <td>${d.descricao}</td>
                 <td class="num">${formatCurrency(d.valor)}</td>
-                <td class="num">${percentOf(d.valor, salario)}</td>
+                <td class="num">${percentOf(Number(d.valor), salario)}</td>
                 <td class="action">
                     <div class="actions">
-                        ${d.descricao !== 'Dízimo' ? `
-                            <button class="edit" data-idx="${i}"><i class="bi bi-pencil"></i></button>
-                            <button class="delete" data-idx="${i}"><i class="bi bi-trash"></i></button>
+                        ${d.id != null ? `
+                            <button class="edit" data-id="${d.id}" data-idx="${i}"><i class="bi bi-pencil"></i></button>
+                            <button class="delete" data-id="${d.id}"><i class="bi bi-trash"></i></button>
                         ` : ''}
                     </div>
                 </td>`;
             tabela.appendChild(tr);
         });
+
+        const customReservaLabel = settings.custom_reserva_label || 'Reserva';
+        const customRestoLabel = settings.custom_resto_label || 'Resto';
 
         [
             ['Salário Total', salario],
@@ -160,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         editBtn.onclick = () => {
             const base = parseFloat(salarioInput.value) || 0;
-            const valorAtual = customReserva != null ? customReserva : (base * 0.5);
+            const valorAtual = settings.custom_reserva != null ? Number(settings.custom_reserva) : (base * 0.5);
             const cell = getById('cell-reserva');
             const labelSpan = getById('label-reserva');
             const labelAtual = labelSpan.textContent.trim();
@@ -187,10 +301,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 { test: v => parseFloat(v) >= 0, message: 'Reserva não pode ser negativa.' }
             ])) return;
 
-            customReserva = parseFloat(inputValor.value);
-            customReservaLabel = inputLabel.value.trim() || 'Reserva';
+            settings.custom_reserva = parseFloat(inputValor.value);
+            settings.custom_reserva_label = inputLabel.value.trim() || 'Reserva';
 
-            saveAll();
+            saveSettings();
             render();
         };
     }
@@ -231,16 +345,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveLabel(type, value) {
         if (type === 'reserva') {
-            customReservaLabel = value.trim() || 'Reserva';
-            setStorage('customReservaLabel', customReservaLabel);
+            settings.custom_reserva_label = value.trim() || 'Reserva';
         } else if (type === 'resto') {
-            customRestoLabel = value.trim() || 'Resto';
-            setStorage('customRestoLabel', customRestoLabel);
+            settings.custom_resto_label = value.trim() || 'Resto';
         }
+        saveSettings();
         render();
     }
 
-    btn.onclick = () => {
+    // === Add/Edit Despesa ===
+    btn.onclick = async () => {
         const validSalario = validateField(salarioInput, validationRules.salario);
         const validDesc = validateField(descInput, validationRules.descricao);
         const validValor = validateField(valorInput, validationRules.valor);
@@ -248,24 +362,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const item = {
             descricao: descInput.value.trim(),
-            valor: parseFloat(valorInput.value)
+            valor: parseFloat(valorInput.value),
         };
 
-        if (editIndex !== null) {
-            despesas[editIndex] = item;
-            editIndex = null;
-            btn.textContent = 'Adicionar Despesa';
-        } else {
-            despesas.push(item);
-        }
+        try {
+            if (editId !== null) {
+                const data = await api('/api/despesas', { method: 'PUT', body: { id: editId, ...item } });
+                const idx = despesas.findIndex(d => d.id === editId);
+                if (idx !== -1) despesas[idx] = data.despesa;
+                editId = null;
+                btn.textContent = 'Adicionar Despesa';
+            } else {
+                const data = await api('/api/despesas', { method: 'POST', body: item });
+                despesas.push(data.despesa);
+            }
 
-        saveAll();
-        descInput.value = valorInput.value = '';
-        render();
+            descInput.value = valorInput.value = '';
+            render();
+        } catch (err) {
+            alert(err.message);
+        }
     };
 
+    // === Salário input ===
     salarioInput.addEventListener('input', () => {
         clearErrors(salarioInput);
+        saveSettings();
         render();
     });
 
@@ -273,28 +395,42 @@ document.addEventListener('DOMContentLoaded', () => {
     descInput.addEventListener('blur', () => validateField(descInput, validationRules.descricao));
     valorInput.addEventListener('blur', () => validateField(valorInput, validationRules.valor));
 
-    tabela.addEventListener('click', event => {
+    // === Table Edit/Delete (event delegation) ===
+    tabela.addEventListener('click', async event => {
         const button = event.target.closest('button');
         if (!button) return;
-        const index = +button.dataset.idx;
+
+        const id = Number(button.dataset.id);
+
         if (button.classList.contains('edit')) {
-            const despesa = despesas[index];
+            const despesa = despesas.find(d => d.id === id);
+            if (!despesa) return;
             descInput.value = despesa.descricao;
-            valorInput.value = despesa.valor;
-            editIndex = index;
+            valorInput.value = Number(despesa.valor);
+            editId = id;
             btn.textContent = 'Atualizar Despesa';
         }
+
         if (button.classList.contains('delete')) {
-            despesas.splice(index, 1);
-            saveAll();
-            render();
+            try {
+                await api('/api/despesas', { method: 'DELETE', body: { id } });
+                despesas = despesas.filter(d => d.id !== id);
+                render();
+            } catch (err) {
+                alert(err.message);
+            }
         }
     });
 
-    const savedSalario = localStorage.getItem('salario');
-    if (savedSalario !== null && !isNaN(parseFloat(savedSalario))) {
-        salarioInput.value = parseFloat(savedSalario).toFixed(2);
-    }
-
-    render();
+    // === Check Session on Load ===
+    (async () => {
+        try {
+            const data = await api('/api/auth/me');
+            currentUser = data.user;
+            await enterApp();
+        } catch {
+            // Não autenticado — mostra login
+            authSection.style.display = 'flex';
+        }
+    })();
 });

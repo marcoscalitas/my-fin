@@ -11,7 +11,59 @@
 </head>
 
 <body>
-    <main>
+    <!-- AUTH SECTION -->
+    <section id="auth-section" class="auth-container">
+        <div class="auth-card">
+            <h1 class="auth-title">My Fin</h1>
+            <p class="auth-subtitle">Calculadora de Despesas</p>
+
+            <div id="auth-error" class="auth-error" style="display:none"></div>
+
+            <!-- LOGIN FORM -->
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="seu@email.com" required />
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Senha</label>
+                    <input type="password" id="login-password" placeholder="Sua senha" required />
+                </div>
+                <button type="submit" id="btn-login">Entrar</button>
+                <p class="auth-switch">
+                    Não tem conta? <a href="#" id="show-register">Criar conta</a>
+                </p>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="register-form" class="auth-form" style="display:none">
+                <div class="form-group">
+                    <label for="reg-name">Nome</label>
+                    <input type="text" id="reg-name" placeholder="Seu nome" required />
+                </div>
+                <div class="form-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" placeholder="seu@email.com" required />
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Senha</label>
+                    <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required minlength="6" />
+                </div>
+                <button type="submit" id="btn-register">Criar Conta</button>
+                <p class="auth-switch">
+                    Já tem conta? <a href="#" id="show-login">Fazer login</a>
+                </p>
+            </form>
+        </div>
+    </section>
+
+    <!-- APP SECTION -->
+    <main id="app-section" style="display:none">
+        <div class="app-header">
+            <span id="user-greeting"></span>
+            <button id="btn-logout" class="btn-logout">Sair</button>
+        </div>
+
         <section class="card" aria-labelledby="calc-title">
             <h1 id="calc-title" class="visually-hidden txt-center">
                 Formulário de Despesas Mensais
@@ -37,7 +89,7 @@
                     <input type="number" id="valor" placeholder="Ex: 10000" min="0" />
                 </div>
 
-                <button id="btn-adicionar">Adicionar Despesa</button>
+                <button id="btn-adicionar" type="button">Adicionar Despesa</button>
             </div>
 
 

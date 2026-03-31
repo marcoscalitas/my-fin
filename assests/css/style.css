@@ -261,3 +261,115 @@ tr:nth-child(even) td {
         font-size: 20px;
     }
 }
+
+/* ===== AUTH STYLES ===== */
+.auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+.auth-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-title {
+    text-align: center;
+    font-size: 1.8rem;
+    color: var(--primary);
+    margin: 0 0 0.25rem;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: #888;
+    margin: 0 0 1.5rem;
+    font-size: 0.95rem;
+}
+
+.auth-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.auth-form button[type="submit"] {
+    margin-top: 0.5rem;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.auth-switch a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-switch a:hover {
+    text-decoration: underline;
+}
+
+.auth-error {
+    background: #fff0f0;
+    color: var(--error);
+    border: 1px solid var(--error);
+    border-radius: var(--primary-border-radius);
+    padding: 0.6rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* ===== APP HEADER ===== */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+}
+
+.app-header span {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.btn-logout {
+    width: auto;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    background: var(--danger);
+    border-radius: var(--primary-border-radius);
+    margin-top: 0;
+}
+
+.btn-logout:hover {
+    filter: brightness(0.9);
+}
+
+/* ===== LOADING ===== */
+.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--primary-border-radius);
+    color: #666;
+    padding: .70rem;
+}
