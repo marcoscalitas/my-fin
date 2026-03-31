@@ -19,24 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return data;
     }
 
-    // === Auth Elements ===
-    const authSection = getById('auth-section');
-    const appSection = getById('app-section');
-    const loginForm = getById('login-form');
-    const registerForm = getById('register-form');
-    const authError = getById('auth-error');
-    const showRegisterLink = getById('show-register');
-    const showLoginLink = getById('show-login');
-    const userGreeting = getById('user-greeting');
-    const btnLogout = getById('btn-logout');
-
-    // === App Elements ===
+    // === Elements ===
     const salarioInput = getById('salario');
     const descInput = getById('descricao');
     const valorInput = getById('valor');
     const tabela = getById('tabela');
     const resumo = getById('resumo');
     const btn = getById('btn-adicionar');
+    const userGreeting = getById('user-greeting');
+    const btnLogout = getById('btn-logout');
 
     const validationRules = {
         salario: [
@@ -57,9 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let despesas = [];
     let settings = { salario: 0, custom_reserva: null, custom_reserva_label: 'Reserva', custom_resto_label: 'Resto' };
     let editId = null;
-    let currentUser = null;
 
-    // === Error/Validation Helpers ===
+    // === Validation Helpers ===
     function showError(field, message) {
         clearErrors(field);
         field.style.borderColor = 'red';
@@ -87,78 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    function showAuthError(msg) {
-        authError.textContent = msg;
-        authError.style.display = 'block';
-    }
-
-    function hideAuthError() {
-        authError.style.display = 'none';
-    }
-
-    // === Auth Toggle ===
-    showRegisterLink.onclick = e => {
-        e.preventDefault();
-        hideAuthError();
-        loginForm.style.display = 'none';
-        registerForm.style.display = 'block';
-    };
-
-    showLoginLink.onclick = e => {
-        e.preventDefault();
-        hideAuthError();
-        registerForm.style.display = 'none';
-        loginForm.style.display = 'block';
-    };
-
-    // === Auth Handlers ===
-    loginForm.onsubmit = async e => {
-        e.preventDefault();
-        hideAuthError();
-        const email = getById('login-email').value.trim();
-        const password = getById('login-password').value;
-
-        try {
-            const data = await api('/api/auth/login', { method: 'POST', body: { email, password } });
-            currentUser = data.user;
-            await enterApp();
-        } catch (err) {
-            showAuthError(err.message);
-        }
-    };
-
-    registerForm.onsubmit = async e => {
-        e.preventDefault();
-        hideAuthError();
-        const name = getById('reg-name').value.trim();
-        const email = getById('reg-email').value.trim();
-        const password = getById('reg-password').value;
-
-        try {
-            const data = await api('/api/auth/register', { method: 'POST', body: { name, email, password } });
-            currentUser = data.user;
-            await enterApp();
-        } catch (err) {
-            showAuthError(err.message);
-        }
-    };
-
+    // === Logout ===
     btnLogout.onclick = async () => {
         await api('/api/auth/logout', { method: 'POST' });
-        currentUser = null;
-        despesas = [];
-        settings = { salario: 0, custom_reserva: null, custom_reserva_label: 'Reserva', custom_resto_label: 'Resto' };
-        appSection.style.display = 'none';
-        authSection.style.display = 'flex';
+        window.location.href = '/login.html';
     };
 
-    // === Enter App ===
-    async function enterApp() {
-        authSection.style.display = 'none';
-        appSection.style.display = 'block';
-        userGreeting.textContent = `Olá, ${currentUser.name}`;
+    // === Load Data ===
+    async function loadApp(user) {
+        userGreeting.textContent = `Olá, ${user.name}`;
 
-        // Carregar dados do servidor
         const [despData, setData] = await Promise.all([
             api('/api/despesas'),
             api('/api/settings'),
@@ -196,7 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const salario = parseFloat(salarioInput.value) || 0;
         const dizimo = salario * 0.1;
 
-        // Montar lista com dízimo na frente
         const allDespesas = [{ id: null, descricao: 'Dízimo', valor: dizimo }, ...despesas];
 
         const total = allDespesas.reduce((sum, d) => sum + Number(d.valor), 0);
@@ -213,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="action">
                     <div class="actions">
                         ${d.id != null ? `
-                            <button class="edit" data-id="${d.id}" data-idx="${i}"><i class="bi bi-pencil"></i></button>
+                            <button class="edit" data-id="${d.id}"><i class="bi bi-pencil"></i></button>
                             <button class="delete" data-id="${d.id}"><i class="bi bi-trash"></i></button>
                         ` : ''}
                     </div>
@@ -395,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
     descInput.addEventListener('blur', () => validateField(descInput, validationRules.descricao));
     valorInput.addEventListener('blur', () => validateField(valorInput, validationRules.valor));
 
-    // === Table Edit/Delete (event delegation) ===
+    // === Table Edit/Delete ===
     tabela.addEventListener('click', async event => {
         const button = event.target.closest('button');
         if (!button) return;
@@ -422,15 +349,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === Check Session on Load ===
+    // === Check Session — redirect to login if not authenticated ===
     (async () => {
         try {
             const data = await api('/api/auth/me');
-            currentUser = data.user;
-            await enterApp();
+            await loadApp(data.user);
         } catch {
-            // Não autenticado — mostra login
-            authSection.style.display = 'flex';
+            window.location.href = '/login.html';
         }
     })();
 });
