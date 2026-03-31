@@ -19,45 +19,81 @@ document.addEventListener('DOMContentLoaded', () => {
         authError.style.display = 'block';
     }
 
+    function hideError() {
+        authError.style.display = 'none';
+    }
+
     // Se já está autenticado, redireciona para o dashboard
     fetch('/api/auth/me')
         .then(res => { if (res.ok) window.location.href = '/'; })
         .catch(() => {});
 
+    const validatorConfig = {
+        errorFieldCssClass: 'is-invalid',
+        errorLabelCssClass: 'invalid-feedback',
+        focusInvalidField: true,
+        lockForm: true,
+    };
+
     // Login
     if (loginForm) {
-        loginForm.onsubmit = async e => {
-            e.preventDefault();
-            authError.style.display = 'none';
+        const validator = new JustValidate('#login-form', validatorConfig);
 
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
+        validator
+            .addField('#login-email', [
+                { rule: 'required', errorMessage: 'Email é obrigatório.' },
+                { rule: 'email', errorMessage: 'Digite um email válido.' },
+            ])
+            .addField('#login-password', [
+                { rule: 'required', errorMessage: 'Senha é obrigatória.' },
+                { rule: 'minLength', value: 1, errorMessage: 'Senha é obrigatória.' },
+            ])
+            .onSuccess(async () => {
+                hideError();
 
-            try {
-                await api('/api/auth/login', { email, password });
-                window.location.href = '/';
-            } catch (err) {
-                showError(err.message);
-            }
-        };
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    await api('/api/auth/login', { email, password });
+                    window.location.href = '/';
+                } catch (err) {
+                    showError(err.message);
+                }
+            });
     }
 
     // Register
     if (registerForm) {
-        registerForm.onsubmit = async e => {
-            e.preventDefault();
-            authError.style.display = 'none';
+        const validator = new JustValidate('#register-form', validatorConfig);
 
-            const name = document.getElementById('reg-name').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
-            const password = document.getElementById('reg-password').value;
+        validator
+            .addField('#reg-name', [
+                { rule: 'required', errorMessage: 'Nome é obrigatório.' },
+                { rule: 'minLength', value: 2, errorMessage: 'Nome deve ter pelo menos 2 caracteres.' },
+                { rule: 'maxLength', value: 100, errorMessage: 'Nome deve ter no máximo 100 caracteres.' },
+            ])
+            .addField('#reg-email', [
+                { rule: 'required', errorMessage: 'Email é obrigatório.' },
+                { rule: 'email', errorMessage: 'Digite um email válido.' },
+            ])
+            .addField('#reg-password', [
+                { rule: 'required', errorMessage: 'Senha é obrigatória.' },
+                { rule: 'minLength', value: 6, errorMessage: 'Senha deve ter pelo menos 6 caracteres.' },
+            ])
+            .onSuccess(async () => {
+                hideError();
 
-            try {
-                await api('/api/auth/register', { name, email, password });
-                window.location.href = '/';
-            } catch (err) {
-                showError(err.message);
-            }
-        };
+                const name = document.getElementById('reg-name').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                const password = document.getElementById('reg-password').value;
+
+                try {
+                    await api('/api/auth/register', { name, email, password });
+                    window.location.href = '/';
+                } catch (err) {
+                    showError(err.message);
+                }
+            });
     }
 });

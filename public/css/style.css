@@ -331,6 +331,19 @@ tr:nth-child(even) td {
     text-align: center;
 }
 
+/* ===== VALIDAÇÃO (Just-validate) ===== */
+.just-validate-error-label {
+    color: var(--error);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.is-invalid {
+    border-color: var(--error) !important;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15);
+}
+
 /* ===== APP HEADER ===== */
 .app-header {
     display: flex;
