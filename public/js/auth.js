@@ -79,7 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ])
             .addField('#reg-password', [
                 { rule: 'required', errorMessage: 'Senha é obrigatória.' },
-                { rule: 'minLength', value: 6, errorMessage: 'Senha deve ter pelo menos 6 caracteres.' },
+                { rule: 'minLength', value: 8, errorMessage: 'Mínimo de 8 caracteres.' },
+                { rule: 'customRegexp', value: /[A-Z]/, errorMessage: 'Deve conter pelo menos uma letra maiúscula.' },
+                { rule: 'customRegexp', value: /[a-z]/, errorMessage: 'Deve conter pelo menos uma letra minúscula.' },
+                { rule: 'customRegexp', value: /[0-9]/, errorMessage: 'Deve conter pelo menos um número.' },
+                { rule: 'customRegexp', value: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, errorMessage: 'Deve conter pelo menos um caractere especial (!@#$%...).' },
             ])
             .onSuccess(async () => {
                 hideError();

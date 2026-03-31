@@ -14,8 +14,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Nome, email e senha são obrigatórios.' });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'A senha deve conter pelo menos uma letra maiúscula.' });
+    }
+    if (!/[a-z]/.test(password)) {
+      return res.status(400).json({ error: 'A senha deve conter pelo menos uma letra minúscula.' });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'A senha deve conter pelo menos um número.' });
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      return res.status(400).json({ error: 'A senha deve conter pelo menos um caractere especial.' });
     }
 
     const existing = await sql`SELECT id FROM users WHERE email = ${email}`;
