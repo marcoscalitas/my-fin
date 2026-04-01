@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileModal = getById('profile-modal');
     const modalClose = getById('modal-close');
     const profileMsg = getById('profile-msg');
+    const userAvatar = getById('user-avatar');
 
     const validationRules = {
         salario: [
@@ -88,8 +89,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // === Load Data ===
+    function getInitials(name) {
+        return name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    }
+
     async function loadApp(user) {
-        userGreeting.textContent = `Olá, ${user.name}`;
+        userGreeting.textContent = user.name;
+        userAvatar.textContent = getInitials(user.name);
 
         const [despData, setData] = await Promise.all([
             api('/api/despesas'),
@@ -379,13 +385,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentUser) {
             getById('profile-name').value = currentUser.name;
             getById('profile-email').value = currentUser.email;
+            getById('modal-avatar').textContent = getInitials(currentUser.name);
+            getById('modal-email').textContent = currentUser.email;
         }
         profileMsg.style.display = 'none';
         profileModal.style.display = 'flex';
     };
 
-    modalClose.onclick = () => { profileModal.style.display = 'none'; };
-    profileModal.onclick = e => { if (e.target === profileModal) profileModal.style.display = 'none'; };
+    const closeModal = () => { profileModal.style.display = 'none'; };
+    modalClose.onclick = closeModal;
+    profileModal.onclick = e => { if (e.target === profileModal) closeModal(); };
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && profileModal.style.display === 'flex') closeModal(); });
 
     // Tabs
     document.querySelectorAll('.profile-tab').forEach(tab => {
@@ -410,7 +420,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const data = await api('/api/auth/update', { method: 'PUT', body: { name, email } });
             currentUser = data.user;
-            userGreeting.textContent = `Olá, ${data.user.name}`;
+            userGreeting.textContent = data.user.name;
+            userAvatar.textContent = getInitials(data.user.name);
+            getById('modal-avatar').textContent = getInitials(data.user.name);
+            getById('modal-email').textContent = data.user.email;
             showProfileMsg('Perfil atualizado com sucesso!', 'success');
         } catch (err) {
             showProfileMsg(err.message, 'error');

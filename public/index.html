@@ -13,18 +13,25 @@
 <body>
     <main>
         <div class="app-header">
-            <span id="user-greeting"></span>
-            <div class="header-actions">
-                <button id="btn-profile" class="btn-profile" title="Meu Perfil"><i class="bi bi-person-circle"></i></button>
-                <button id="btn-logout" class="btn-logout">Sair</button>
+            <div class="user-pill" id="btn-profile" title="Meu Perfil">
+                <div class="user-avatar" id="user-avatar"></div>
+                <span id="user-greeting"></span>
+                <i class="bi bi-chevron-down chevron"></i>
             </div>
+            <button id="btn-logout" class="btn-logout"><i class="bi bi-box-arrow-right"></i> Sair</button>
         </div>
 
         <!-- Modal de Perfil -->
         <div id="profile-modal" class="modal-overlay" style="display:none">
             <div class="modal-card">
                 <div class="modal-header">
-                    <h2>Meu Perfil</h2>
+                    <div class="modal-title-row">
+                        <div class="modal-avatar" id="modal-avatar"></div>
+                        <div>
+                            <h2>Meu Perfil</h2>
+                            <p class="modal-email" id="modal-email"></p>
+                        </div>
+                    </div>
                     <button id="modal-close" class="modal-close" title="Fechar">&times;</button>
                 </div>
 
